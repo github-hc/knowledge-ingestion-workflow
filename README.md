@@ -1,6 +1,9 @@
 # Doc Ingestion MVP
 
 Upload a PDF → extract → chunk → embed → store in Weaviate → webhook on completion.
+## Architecture
+<img width="1292" height="1330" alt="image" src="https://github.com/user-attachments/assets/6c413429-4caa-46a9-862b-7b0bc8882370" />
+
 
 ## Setup
 
