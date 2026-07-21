@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
 
 
@@ -24,3 +24,22 @@ class WebhookPayload(BaseModel):
     error: Optional[str] = None
     chunk_count: Optional[int] = None
     timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+
+
+class QueryRequest(BaseModel):
+    query: str = Field(..., min_length=1, description="Natural-language search query")
+    limit: int = Field(default=5, ge=1, le=50, description="Max number of results")
+
+
+class QueryResult(BaseModel):
+    text: str
+    filename: str
+    page_numbers: List[int]
+    section_path: str
+    distance: Optional[float] = None
+
+
+class QueryResponse(BaseModel):
+    query: str
+    results: List[QueryResult]
+    total: int

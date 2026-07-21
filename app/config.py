@@ -11,6 +11,7 @@ class Settings(BaseSettings):
 
     redis_url: str = "redis://redis:6379/0"
     weaviate_url: str = "http://weaviate:8080"
+    weaviate_grpc_port: int = 50051
     weaviate_class_name: str = "DocumentChunk"
 
     celery_broker_url: str = "redis://redis:6379/0"

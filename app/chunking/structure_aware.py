@@ -1,11 +1,11 @@
+import os
 from typing import List, Dict, Any
-
-from unstructured.documents.elements import Element
-from unstructured.chunking.title import chunk_by_title
 
 from app.chunking.base import Chunker, Chunk
 from app.extraction.base import ExtractedContent
-from app.config import settings
+from app.pipeline.logger import get_pipeline_logger
+
+log = get_pipeline_logger("chunker")
 
 
 def _token_count(text: str) -> int:
@@ -15,9 +15,9 @@ def _token_count(text: str) -> int:
 def _split_oversized(text: str, max_tokens: int, overlap_tokens: int) -> List[str]:
     words = text.split()
     chunks: List[str] = []
-    i = 0
     step = max_tokens * 4
     overlap = overlap_tokens * 4
+    i = 0
     while i < len(words):
         end = min(i + step, len(words))
         chunks.append(" ".join(words[i:end]))
@@ -36,51 +36,39 @@ class StructureAwareChunker(Chunker):
     ) -> None:
         self.max_tokens = max_tokens
         self.overlap_tokens = overlap_tokens
-        self.multipage_sections = multipage_sections
 
     def chunk(self, content: ExtractedContent) -> List[Chunk]:
-        elements: List[Element] = list(content.elements)
-
-        chunks = chunk_by_title(
-            elements,
-            multipage_sections=self.multipage_sections,
-        )
+        filename = os.path.basename(content.metadata.get("source", ""))
+        log.info(f"CHUNK START: filename={filename}, elements={len(content.elements)}, total_text_chars={len(content.text)}")
 
         results: List[Chunk] = []
-        for c in chunks:
-            text = c.text or ""
+
+        for idx, element in enumerate(content.elements):
+            text = getattr(element, "text", "") or ""
             if not text.strip():
+                log.debug(f"  element[{idx}] skipped (empty text)")
                 continue
 
-            metadata: Dict[str, Any] = {"filename": content.metadata.get("source", "")}
-            page_numbers: List[int] = []
-            section_path_parts: List[str] = []
+            el_meta = getattr(element, "metadata", {}) or {}
+            page_num = el_meta.get("page_number")
+            page_numbers = [page_num] if page_num is not None else []
 
-            if hasattr(c, "metadata") and c.metadata:
-                if hasattr(c.metadata, "page_number") and c.metadata.page_number is not None:
-                    page_numbers.append(c.metadata.page_number)
-                if hasattr(c.metadata, "filename") and c.metadata.filename:
-                    metadata["filename"] = c.metadata.filename
+            base_metadata: Dict[str, Any] = {
+                "filename": filename,
+                "page_numbers": page_numbers,
+                "section_path": "",
+            }
 
-            page_numbers = sorted(set(page_numbers))
+            tokens = _token_count(text)
+            log.debug(f"  element[{idx}] page={page_num} tokens≈{tokens} chars={len(text)}")
 
-            for el in elements:
-                if el.text and el.text in text:
-                    if hasattr(el, "metadata") and el.metadata:
-                        if hasattr(el.metadata, "page_number") and el.metadata.page_number is not None:
-                            if el.metadata.page_number not in page_numbers:
-                                page_numbers.append(el.metadata.page_number)
-                        if hasattr(el, "category") and el.category in {"Title", "Header"}:
-                            if el.text.strip() not in section_path_parts:
-                                section_path_parts.append(el.text.strip())
-
-            metadata["page_numbers"] = page_numbers
-            metadata["section_path"] = " > ".join(section_path_parts) if section_path_parts else ""
-
-            if _token_count(text) > self.max_tokens:
-                for part in _split_oversized(text, self.max_tokens, self.overlap_tokens):
-                    results.append(Chunk(text=part, metadata=dict(metadata)))
+            if tokens > self.max_tokens:
+                parts = _split_oversized(text, self.max_tokens, self.overlap_tokens)
+                log.debug(f"    → split into {len(parts)} sub-chunks")
+                for part in parts:
+                    results.append(Chunk(text=part, metadata=dict(base_metadata)))
             else:
-                results.append(Chunk(text=text, metadata=metadata))
+                results.append(Chunk(text=text, metadata=base_metadata))
 
+        log.info(f"CHUNK END: produced {len(results)} chunks")
         return results
