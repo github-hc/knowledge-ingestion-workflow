@@ -70,9 +70,10 @@ sequenceDiagram
             rect rgb(240, 248, 255)
                 note over Celery: Pipeline Orchestrator Execution
                 Celery->>Celery: Stage 1: Extract text using PDFExtractor (resolves total_pages)
-                Celery->>Celery: Stage 2: Chunk text with StructureAwareChunker
-                Celery->>Celery: Stage 3: Prepare documents & enrich with file metadata
-                Celery->>Weaviate: Stage 4: Store & vectorise chunks (stores hash & metadata)
+                Celery->>Celery: Stage 2: Sanitize text using PIISanitizer (PII detection & masking/removal/tokenization)
+                Celery->>Celery: Stage 3: Chunk text with StructureAwareChunker
+                Celery->>Celery: Stage 4: Prepare documents & enrich with file metadata
+                Celery->>Weaviate: Stage 5: Store & vectorise chunks (stores hash & metadata)
             end
 
             alt Processing Success

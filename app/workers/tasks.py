@@ -8,7 +8,8 @@ from app.extraction.factory import ExtractorFactory
 from app.chunking.structure_aware import StructureAwareChunker
 from app.repositories.vector_store import WeaviateRepository
 from app.repositories.job_store import JobStore
-from app.pipeline.stages import ExtractStage, ChunkStage, EmbedStage, StoreStage
+from app.pipeline.stages import ExtractStage, SanitizeStage, ChunkStage, EmbedStage, StoreStage
+from app.pipeline.sanitizer import PIISanitizer
 from app.pipeline.orchestrator import PipelineOrchestrator
 from app.notifications.webhook import WebhookNotifier
 from app.config import settings
@@ -22,9 +23,13 @@ def _build_orchestrator() -> PipelineOrchestrator:
     job_store = JobStore(redis_url=settings.redis_url)
     webhook_notifier = WebhookNotifier(default_url=settings.default_webhook_url)
 
+    sanitizer = PIISanitizer(policy=settings.pii_policy)
+    sanitize_stage = SanitizeStage(sanitizer)
+
     return PipelineOrchestrator(
         job_store=job_store,
         extract_stage=ExtractStage(ExtractorFactory.get("application/pdf")),
+        sanitize_stage=sanitize_stage,
         chunk_stage=ChunkStage(
             StructureAwareChunker(
                 max_tokens=settings.chunk_max_tokens,

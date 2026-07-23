@@ -7,6 +7,7 @@ from app.repositories.job_store import JobStore
 from app.models.job import Job, JobStatus
 from app.pipeline.stages import (
     ExtractStage,
+    SanitizeStage,
     ChunkStage,
     EmbedStage,
     StoreStage,
@@ -18,6 +19,7 @@ class PipelineOrchestrator:
         self,
         job_store: JobStore,
         extract_stage: ExtractStage,
+        sanitize_stage: SanitizeStage,
         chunk_stage: ChunkStage,
         embed_stage: EmbedStage,
         store_stage: StoreStage,
@@ -25,6 +27,7 @@ class PipelineOrchestrator:
     ) -> None:
         self.job_store = job_store
         self.extract_stage = extract_stage
+        self.sanitize_stage = sanitize_stage
         self.chunk_stage = chunk_stage
         self.embed_stage = embed_stage
         self.store_stage = store_stage
@@ -35,6 +38,12 @@ class PipelineOrchestrator:
             self.job_store.update_status(job.job_id, JobStatus.PROCESSING)
 
             extracted: ExtractedContent = self.extract_stage.execute(file_path)
+
+            # Sanitize extracted text and element text before chunking
+            extracted.text = self.sanitize_stage.execute(extracted.text)
+            for el in extracted.elements:
+                el.text = self.sanitize_stage.execute(el.text)
+
             chunks: List[Chunk] = self.chunk_stage.execute(extracted)
 
             total_pages = extracted.metadata.get("total_pages", 0)

@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     default_webhook_url: str = ""
     chunk_max_tokens: int = 750
     chunk_overlap_tokens: int = 100
+    pii_policy: str = "mask"
 
 
 settings = Settings()

@@ -42,3 +42,11 @@ class StoreStage:
         self.repository.ensure_collection()
         self.repository.upsert_chunks(documents)
         return len(documents)
+
+
+class SanitizeStage:
+    def __init__(self, sanitizer) -> None:
+        self.sanitizer = sanitizer
+
+    def execute(self, text: str) -> str:
+        return self.sanitizer.sanitize(text)
