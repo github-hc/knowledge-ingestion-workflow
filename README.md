@@ -114,8 +114,9 @@ knowledge-ingestion-workflow/
 │   │   └── webhook.py            # Webhook dispatch HTTP client
 │   ├── pipeline/
 │   │   ├── logger.py             # Pipeline logging config (pipeline.log)
-│   │   ├── orchestrator.py       # Orchestrates the 4 stages of ingestion
-│   │   └── stages.py             # Individual Stage executions (Extract, Chunk, Embed, Store)
+│   │   ├── orchestrator.py       # Orchestrates the 5 stages of ingestion
+│   │   ├── sanitizer.py          # PII Sanitizer and policy engine
+│   │   └── stages.py             # Individual Stage executions (Extract, Sanitize, Chunk, Embed, Store)
 │   ├── repositories/
 │   │   ├── job_store.py          # Redis client wrapper for Job state persistence
 │   │   └── vector_store.py       # Weaviate client wrapper for CRUD/Vector Search

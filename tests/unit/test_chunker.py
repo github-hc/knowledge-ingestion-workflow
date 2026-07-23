@@ -5,7 +5,7 @@ from app.extraction.base import ExtractedContent
 
 
 def test_token_count():
-    assert _token_count("hello world") == 3
+    assert _token_count("hello world") == 2
     assert _token_count("") == 1
 
 

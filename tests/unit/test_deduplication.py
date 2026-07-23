@@ -4,8 +4,16 @@ from app.main import app
 from app.models.job import Job, JobStatus
 from app.api.routes.ingestion import get_job_store
 
+import pytest
+
 mock_job_store = MagicMock()
-app.dependency_overrides[get_job_store] = lambda: mock_job_store
+
+@pytest.fixture(autouse=True)
+def setup_overrides():
+    app.dependency_overrides[get_job_store] = lambda: mock_job_store
+    yield
+    if get_job_store in app.dependency_overrides:
+        del app.dependency_overrides[get_job_store]
 
 client = TestClient(app)
 

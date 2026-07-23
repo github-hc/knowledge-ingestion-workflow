@@ -15,8 +15,9 @@ def _token_count(text: str) -> int:
 def _split_oversized(text: str, max_tokens: int, overlap_tokens: int) -> List[str]:
     words = text.split()
     chunks: List[str] = []
-    step = max_tokens * 4
-    overlap = overlap_tokens * 4
+    # Estimate words per token (~0.75 words per token) to keep chunks within token limit
+    step = max(1, int(max_tokens * 0.75))
+    overlap = int(overlap_tokens * 0.75)
     i = 0
     while i < len(words):
         end = min(i + step, len(words))

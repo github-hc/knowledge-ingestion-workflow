@@ -45,3 +45,7 @@ def test_upload_and_job_status(mock_check_file_exists):
         data = response.json()
         assert "job_id" in data
         assert data["status"] == "PENDING"
+    
+    # Clean up overrides
+    if get_job_store in app.dependency_overrides:
+        del app.dependency_overrides[get_job_store]
