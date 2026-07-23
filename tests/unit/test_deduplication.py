@@ -102,3 +102,31 @@ def test_upsert_chunks_raises_value_error_if_file_exists():
 
         with pytest.raises(ValueError, match="already exists in Weaviate"):
             repo.upsert_chunks(chunks)
+
+
+def test_list_documents_route():
+    from app.api.routes.ingestion import _get_weaviate
+    mock_weaviate = MagicMock()
+    mock_weaviate.list_all_documents.return_value = [
+        {
+            "filename": "test.pdf",
+            "file_hash": "hash123",
+            "file_size": 5000,
+            "mime_type": "application/pdf",
+            "total_pages": 3,
+            "original_file_name": "original_test.pdf",
+        }
+    ]
+    app.dependency_overrides[_get_weaviate] = lambda: mock_weaviate
+
+    response = client.get("/api/v1/documents")
+    # Clean up override
+    del app.dependency_overrides[_get_weaviate]
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["filename"] == "test.pdf"
+    assert data[0]["file_hash"] == "hash123"
+    assert data[0]["file_size"] == 5000
+    assert data[0]["original_file_name"] == "original_test.pdf"

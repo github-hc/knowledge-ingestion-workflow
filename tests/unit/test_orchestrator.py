@@ -68,6 +68,8 @@ def test_orchestrator_pii_sanitization_flow():
     assert len(saved_chunks) == 2
     assert saved_chunks[0].text == "Contact email [EMAIL]"
     assert saved_chunks[1].text == "PAN is [PAN]."
+    assert saved_chunks[0].metadata["original_file_name"] == "test.pdf"
+    assert saved_chunks[1].metadata["original_file_name"] == "test.pdf"
     
     # Verify job store and webhooks
     from app.models.job import JobStatus

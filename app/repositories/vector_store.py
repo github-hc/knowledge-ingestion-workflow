@@ -62,9 +62,9 @@ class WeaviateRepository(VectorStoreRepository):
                 collection = self._client.collections.get(self.class_name)
                 config = collection.config.get()
                 prop_names = [p.name for p in config.properties]
-                if "file_hash" in prop_names:
+                if "file_hash" in prop_names and "original_file_name" in prop_names:
                     return
-                log.info(f"Collection {self.class_name} is outdated (missing 'file_hash'). Recreating...")
+                log.info(f"Collection {self.class_name} is outdated (missing 'file_hash' or 'original_file_name'). Recreating...")
                 self._client.collections.delete(self.class_name)
             except Exception as e:
                 log.warning(f"Failed to check collection properties: {e}. Recreating to be safe...")
@@ -72,7 +72,7 @@ class WeaviateRepository(VectorStoreRepository):
                     self._client.collections.delete(self.class_name)
                 except Exception:
                     pass
-
+ 
         log.info(f"Creating collection: {self.class_name}")
         self._client.collections.create(
             name=self.class_name,
@@ -86,6 +86,7 @@ class WeaviateRepository(VectorStoreRepository):
                 Property(name="file_size", data_type=DataType.INT),
                 Property(name="mime_type", data_type=DataType.TEXT),
                 Property(name="total_pages", data_type=DataType.INT),
+                Property(name="original_file_name", data_type=DataType.TEXT),
             ],
         )
 
@@ -155,6 +156,7 @@ class WeaviateRepository(VectorStoreRepository):
                 "file_size": chunk.metadata.get("file_size", 0),
                 "mime_type": chunk.metadata.get("mime_type", ""),
                 "total_pages": chunk.metadata.get("total_pages", 0),
+                "original_file_name": chunk.metadata.get("original_file_name", ""),
             }
             log.debug(f"  posting object[{i}]: filename={props['filename']} text_chars={len(props['text'])}")
             try:
@@ -190,6 +192,7 @@ class WeaviateRepository(VectorStoreRepository):
               file_size
               mime_type
               total_pages
+              original_file_name
               _additional {{ distance }}
             }}
           }}
@@ -228,5 +231,55 @@ class WeaviateRepository(VectorStoreRepository):
                 "file_size": obj.get("file_size", 0),
                 "mime_type": obj.get("mime_type", ""),
                 "total_pages": obj.get("total_pages", 0),
+                "original_file_name": obj.get("original_file_name", ""),
             })
         return results
+
+    def list_all_documents(self) -> List[Dict[str, Any]]:
+        graphql_query = """
+        {{
+          Get {{
+            {class_name}(limit: 10000) {{
+              filename
+              file_hash
+              file_size
+              mime_type
+              total_pages
+              original_file_name
+            }}
+          }}
+        }}
+        """.format(class_name=self.class_name)
+
+        base_url = f"http://{self._host}:{self._port}"
+        response = httpx.post(
+            f"{base_url}/v1/graphql",
+            json={"query": graphql_query},
+            timeout=30.0,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        if "errors" in data:
+            log.error(f"GraphQL list error: {data['errors']}")
+            raise RuntimeError(f"GraphQL error: {data['errors']}")
+
+        objects = data.get("data", {}).get("Get", {}).get(self.class_name, [])
+
+        # Deduplicate by file_hash
+        documents_map = {}
+        for obj in objects:
+            f_hash = obj.get("file_hash")
+            if not f_hash:
+                continue
+            if f_hash not in documents_map:
+                documents_map[f_hash] = {
+                    "filename": obj.get("filename", ""),
+                    "file_hash": f_hash,
+                    "file_size": obj.get("file_size", 0),
+                    "mime_type": obj.get("mime_type", ""),
+                    "total_pages": obj.get("total_pages", 0),
+                    "original_file_name": obj.get("original_file_name", ""),
+                }
+
+        return list(documents_map.values())

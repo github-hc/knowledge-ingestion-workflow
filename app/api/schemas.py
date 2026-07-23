@@ -44,9 +44,19 @@ class QueryResult(BaseModel):
     file_size: Optional[int] = None
     mime_type: Optional[str] = None
     total_pages: Optional[int] = None
+    original_file_name: Optional[str] = None
 
 
 class QueryResponse(BaseModel):
     query: str
     results: List[QueryResult]
     total: int
+
+
+class DocumentMetadataResponse(BaseModel):
+    filename: str
+    file_hash: str
+    file_size: int
+    mime_type: str
+    total_pages: int
+    original_file_name: str

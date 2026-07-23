@@ -52,6 +52,7 @@ class PipelineOrchestrator:
                 chunk.metadata["file_size"] = job.file_size
                 chunk.metadata["mime_type"] = job.mime_type
                 chunk.metadata["total_pages"] = total_pages
+                chunk.metadata["original_file_name"] = job.filename
 
             documents: List[VectorDocument] = self.embed_stage.execute(chunks)
             chunk_count = self.store_stage.execute(documents)

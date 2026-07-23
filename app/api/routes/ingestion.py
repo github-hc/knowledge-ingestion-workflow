@@ -7,7 +7,8 @@ from app.config import settings
 from app.models.job import Job, JobStatus
 from app.repositories.job_store import JobStore
 from app.repositories.vector_store import WeaviateRepository
-from app.api.schemas import DocumentUploadResponse, JobDetailResponse
+from typing import List, Dict, Any
+from app.api.schemas import DocumentUploadResponse, JobDetailResponse, DocumentMetadataResponse
 from app.workers.tasks import process_document
 
 router = APIRouter()
@@ -98,3 +99,14 @@ def get_job(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     return JobDetailResponse(**job.to_dict())
+
+
+@router.get("/documents", response_model=List[DocumentMetadataResponse])
+def list_documents(
+    weaviate_repo: WeaviateRepository = Depends(_get_weaviate),
+) -> List[DocumentMetadataResponse]:
+    try:
+        docs = weaviate_repo.list_all_documents()
+        return [DocumentMetadataResponse(**doc) for doc in docs]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

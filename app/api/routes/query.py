@@ -50,6 +50,7 @@ def query_documents(body: QueryRequest) -> QueryResponse:
             file_size=r.get("file_size"),
             mime_type=r.get("mime_type"),
             total_pages=r.get("total_pages"),
+            original_file_name=r.get("original_file_name"),
         )
         for r in raw_results
     ]

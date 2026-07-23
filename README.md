@@ -332,25 +332,27 @@ curl -X POST "http://localhost:8000/api/v1/query" \
   "results": [
     {
       "text": "The StructureAwareChunker enforces a max_tokens parameter, which defaults to 750 tokens...",
-      "filename": "documentation.pdf",
+      "filename": "tmp_ykw72ma.pdf",
       "page_numbers": [3],
       "section_path": "",
       "distance": 0.18732,
       "file_hash": "e8c1f14b404960f52ec5ea27630650d522639026fb0d223e9a092188d6b815ad",
       "file_size": 17555,
       "mime_type": "application/pdf",
-      "total_pages": 4
+      "total_pages": 4,
+      "original_file_name": "documentation.pdf"
     },
     {
       "text": "Overlap tokens parameter is used to allow chunking continuity across overlapping lines...",
-      "filename": "documentation.pdf",
+      "filename": "tmp_ykw72ma.pdf",
       "page_numbers": [4],
       "section_path": "",
       "distance": 0.22451,
       "file_hash": "e8c1f14b404960f52ec5ea27630650d522639026fb0d223e9a092188d6b815ad",
       "file_size": 17555,
       "mime_type": "application/pdf",
-      "total_pages": 4
+      "total_pages": 4,
+      "original_file_name": "documentation.pdf"
     }
   ],
   "total": 2
@@ -371,6 +373,34 @@ Verifies basic API server availability.
 {
   "status": "ok"
 }
+```
+
+---
+
+### 5. List Ingested Documents & Metadata
+
+Returns a unique list of all successfully processed documents stored in Weaviate, along with their metadata.
+
+- **URL**: `/api/v1/documents`
+- **Method**: `GET`
+
+**Example Request:**
+```bash
+curl -X GET "http://localhost:8000/api/v1/documents"
+```
+
+**Response:**
+```json
+[
+  {
+    "filename": "tmp_ykw72ma.pdf",
+    "file_hash": "e8c1f14b404960f52ec5ea27630650d522639026fb0d223e9a092188d6b815ad",
+    "file_size": 17555,
+    "mime_type": "application/pdf",
+    "total_pages": 4,
+    "original_file_name": "document.pdf"
+  }
+]
 ```
 
 ---
