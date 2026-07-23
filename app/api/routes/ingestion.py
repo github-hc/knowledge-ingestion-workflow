@@ -110,3 +110,16 @@ def list_documents(
         return [DocumentMetadataResponse(**doc) for doc in docs]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/reset", summary="Reset and clean the Weaviate vector store database and Redis job history")
+def reset_database(
+    weaviate_repo: WeaviateRepository = Depends(_get_weaviate),
+    job_store: JobStore = Depends(get_job_store),
+):
+    try:
+        weaviate_repo.reset_collection()
+        job_store.clean_all()
+        return {"status": "success", "message": "Weaviate database and Redis job store reset successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

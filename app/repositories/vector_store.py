@@ -94,6 +94,11 @@ class WeaviateRepository(VectorStoreRepository):
         if self._client.collections.exists(self.class_name):
             self._client.collections.delete(self.class_name)
 
+    def reset_collection(self) -> None:
+        log.info(f"Resetting Weaviate collection: {self.class_name}")
+        self.delete_collection()
+        self.ensure_collection()
+
     def check_file_exists(self, file_hash: str) -> bool:
         graphql_query = """
         {{
@@ -184,7 +189,8 @@ class WeaviateRepository(VectorStoreRepository):
     ) -> List[Dict[str, Any]]:
         log.info(f"HYBRID QUERY (Rerank={rerank}): '{text}' limit={limit} alpha={alpha}")
         
-        rerank_additional = "rerank(property: \"text\") { score }" if rerank else ""
+        escaped_query = text.replace('"', '\\"')
+        rerank_additional = f"rerank(property: \"text\", query: \"{escaped_query}\") {{ score }}" if rerank else ""
         
         graphql_query = """
         {{
@@ -193,6 +199,7 @@ class WeaviateRepository(VectorStoreRepository):
               hybrid: {{
                 query: "{query}"
                 alpha: {alpha}
+                properties: ["text"]
               }}
               limit: {limit}
             ) {{
@@ -214,7 +221,7 @@ class WeaviateRepository(VectorStoreRepository):
         }}
         """.format(
             class_name=self.class_name,
-            query=text.replace('"', '\\"'),
+            query=escaped_query,
             alpha=alpha,
             limit=limit,
             rerank_additional=rerank_additional,

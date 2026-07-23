@@ -173,3 +173,24 @@ def test_query_route_hybrid_mapping():
     assert data["results"][0]["distance"] is None
     assert data["results"][0]["original_file_name"] == "original.pdf"
 
+
+def test_reset_database_route():
+    from app.api.routes.ingestion import _get_weaviate
+    mock_weaviate = MagicMock()
+    app.dependency_overrides[_get_weaviate] = lambda: mock_weaviate
+    
+    # Reset mock calls count from setup_overrides fixture
+    mock_job_store.clean_all.reset_mock()
+
+    response = client.post("/api/v1/reset")
+    # Clean up override
+    del app.dependency_overrides[_get_weaviate]
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    assert data["message"] == "Weaviate database and Redis job store reset successfully."
+    mock_weaviate.reset_collection.assert_called_once()
+    mock_job_store.clean_all.assert_called_once()
+
+

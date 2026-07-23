@@ -413,6 +413,28 @@ curl -X GET "http://localhost:8000/api/v1/documents"
 
 ---
 
+### 6. Reset Database
+
+Drops the Weaviate collection, runs a fresh schema mapping initialization, and clears all job history from Redis (allowing duplicate files to be uploaded again).
+
+- **URL**: `/api/v1/reset`
+- **Method**: `POST`
+
+**Example Request:**
+```bash
+curl -X POST "http://localhost:8000/api/v1/reset"
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "message": "Weaviate database and Redis job store reset successfully."
+}
+```
+
+---
+
 ## Webhook Delivery
 
 When the pipeline completes (or encounters an error), the Celery worker triggers an HTTP POST request to the configured Webhook URL.

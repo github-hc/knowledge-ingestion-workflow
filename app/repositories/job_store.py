@@ -83,3 +83,11 @@ class JobStore:
             job.error = error
         self._client.set(self._key(job_id), self._serialize(job))
         return job
+
+    def clean_all(self) -> None:
+        job_keys = self._client.keys(f"{self._prefix}*")
+        if job_keys:
+            self._client.delete(*job_keys)
+        hash_keys = self._client.keys("hash:*")
+        if hash_keys:
+            self._client.delete(*hash_keys)
