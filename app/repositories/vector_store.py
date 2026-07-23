@@ -175,8 +175,17 @@ class WeaviateRepository(VectorStoreRepository):
         if failed > 0:
             raise RuntimeError(f"Failed to insert {failed} chunks into Weaviate.")
 
-    def query(self, text: str, limit: int = 5, alpha: float = 0.5) -> List[Dict[str, Any]]:
-        log.info(f"HYBRID QUERY: '{text}' limit={limit} alpha={alpha}")
+    def query(
+        self,
+        text: str,
+        limit: int = 5,
+        alpha: float = 0.5,
+        rerank: bool = True,
+    ) -> List[Dict[str, Any]]:
+        log.info(f"HYBRID QUERY (Rerank={rerank}): '{text}' limit={limit} alpha={alpha}")
+        
+        rerank_additional = "rerank(property: \"text\") { score }" if rerank else ""
+        
         graphql_query = """
         {{
           Get {{
@@ -196,7 +205,10 @@ class WeaviateRepository(VectorStoreRepository):
               mime_type
               total_pages
               original_file_name
-              _additional {{ score }}
+              _additional {{
+                score
+                {rerank_additional}
+              }}
             }}
           }}
         }}
@@ -205,6 +217,7 @@ class WeaviateRepository(VectorStoreRepository):
             query=text.replace('"', '\\"'),
             alpha=alpha,
             limit=limit,
+            rerank_additional=rerank_additional,
         )
 
         base_url = f"http://{self._host}:{self._port}"
@@ -225,6 +238,11 @@ class WeaviateRepository(VectorStoreRepository):
 
         results: List[Dict[str, Any]] = []
         for obj in objects:
+            rerank_list = obj.get("_additional", {}).get("rerank")
+            rerank_score = None
+            if rerank_list and isinstance(rerank_list, list) and len(rerank_list) > 0:
+                rerank_score = rerank_list[0].get("score")
+
             results.append({
                 "text": obj.get("text", ""),
                 "filename": obj.get("filename", ""),
@@ -232,6 +250,7 @@ class WeaviateRepository(VectorStoreRepository):
                 "section_path": obj.get("section_path", ""),
                 "distance": obj.get("_additional", {}).get("distance"),
                 "score": obj.get("_additional", {}).get("score"),
+                "rerank_score": rerank_score,
                 "file_hash": obj.get("file_hash", ""),
                 "file_size": obj.get("file_size", 0),
                 "mime_type": obj.get("mime_type", ""),

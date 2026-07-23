@@ -167,6 +167,7 @@ cp .env.example .env
 | `CHUNK_OVERLAP_TOKENS` | `100` | Token overlap size between successive chunks. |
 | `PII_POLICY` | `mask` | PII sanitization policy (`mask`, `remove`, `tokenize`). |
 | `WEAVIATE_HYBRID_ALPHA` | `0.5` | Weight for hybrid search blending (`1.0` = semantic vector search, `0.0` = keyword BM25 search). |
+| `WEAVIATE_RERANKING` | `true` | Toggle cross-encoder rerank module query execution. |
 
 ---
 
@@ -307,9 +308,9 @@ curl -X GET "http://localhost:8000/api/v1/jobs/7ac15339-4d2d-45db-91b3-6c7b0bc88
 
 ---
 
-### 3. Hybrid Search Query
+### 3. Hybrid Search Query with Cross-Encoder Reranking
 
-Queries Weaviate using a hybrid search (blending semantic vector retrieval and BM25 keyword matching). Returns source file metadata along with search score metrics.
+Queries Weaviate using a hybrid search (blending semantic vector retrieval and BM25 keyword matching) and runs a post-search reranking stage using a Cross-Encoder transformer model. Returns source file metadata along with search score and rerank score metrics.
 
 - **URL**: `/api/v1/query`
 - **Method**: `POST`
@@ -340,6 +341,7 @@ curl -X POST "http://localhost:8000/api/v1/query" \
       "section_path": "",
       "distance": null,
       "score": 0.87532,
+      "rerank_score": -4.47159,
       "file_hash": "e8c1f14b404960f52ec5ea27630650d522639026fb0d223e9a092188d6b815ad",
       "file_size": 17555,
       "mime_type": "application/pdf",
@@ -353,6 +355,7 @@ curl -X POST "http://localhost:8000/api/v1/query" \
       "section_path": "",
       "distance": null,
       "score": 0.76541,
+      "rerank_score": -5.16706,
       "file_hash": "e8c1f14b404960f52ec5ea27630650d522639026fb0d223e9a092188d6b815ad",
       "file_size": 17555,
       "mime_type": "application/pdf",

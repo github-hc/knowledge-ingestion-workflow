@@ -38,6 +38,7 @@ def query_documents(
             text=body.query,
             limit=body.limit,
             alpha=settings.weaviate_hybrid_alpha,
+            rerank=settings.weaviate_reranking,
         )
     except Exception as exc:
         raise HTTPException(
@@ -53,6 +54,7 @@ def query_documents(
             section_path=r.get("section_path", ""),
             distance=r.get("distance"),
             score=r.get("score"),
+            rerank_score=r.get("rerank_score"),
             file_hash=r.get("file_hash"),
             file_size=r.get("file_size"),
             mime_type=r.get("mime_type"),

@@ -41,6 +41,7 @@ class QueryResult(BaseModel):
     section_path: str
     distance: Optional[float] = None
     score: Optional[float] = None
+    rerank_score: Optional[float] = None
     file_hash: Optional[str] = None
     file_size: Optional[int] = None
     mime_type: Optional[str] = None

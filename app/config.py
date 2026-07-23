@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     chunk_overlap_tokens: int = 100
     pii_policy: str = "mask"
     weaviate_hybrid_alpha: float = 0.5
+    weaviate_reranking: bool = True
 
 
 settings = Settings()
