@@ -175,13 +175,16 @@ class WeaviateRepository(VectorStoreRepository):
         if failed > 0:
             raise RuntimeError(f"Failed to insert {failed} chunks into Weaviate.")
 
-    def query(self, text: str, limit: int = 5) -> List[Dict[str, Any]]:
-        log.info(f"QUERY: '{text}' limit={limit}")
+    def query(self, text: str, limit: int = 5, alpha: float = 0.5) -> List[Dict[str, Any]]:
+        log.info(f"HYBRID QUERY: '{text}' limit={limit} alpha={alpha}")
         graphql_query = """
         {{
           Get {{
             {class_name}(
-              nearText: {{ concepts: {concepts} }}
+              hybrid: {{
+                query: "{query}"
+                alpha: {alpha}
+              }}
               limit: {limit}
             ) {{
               text
@@ -193,13 +196,14 @@ class WeaviateRepository(VectorStoreRepository):
               mime_type
               total_pages
               original_file_name
-              _additional {{ distance }}
+              _additional {{ score }}
             }}
           }}
         }}
         """.format(
             class_name=self.class_name,
-            concepts=str([text]).replace("'", '"'),
+            query=text.replace('"', '\\"'),
+            alpha=alpha,
             limit=limit,
         )
 
@@ -227,6 +231,7 @@ class WeaviateRepository(VectorStoreRepository):
                 "page_numbers": obj.get("page_numbers", []),
                 "section_path": obj.get("section_path", ""),
                 "distance": obj.get("_additional", {}).get("distance"),
+                "score": obj.get("_additional", {}).get("score"),
                 "file_hash": obj.get("file_hash", ""),
                 "file_size": obj.get("file_size", 0),
                 "mime_type": obj.get("mime_type", ""),

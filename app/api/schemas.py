@@ -40,6 +40,7 @@ class QueryResult(BaseModel):
     page_numbers: List[int]
     section_path: str
     distance: Optional[float] = None
+    score: Optional[float] = None
     file_hash: Optional[str] = None
     file_size: Optional[int] = None
     mime_type: Optional[str] = None

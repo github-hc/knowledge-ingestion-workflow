@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query as QueryParam
+from fastapi import APIRouter, HTTPException, Depends, Query as QueryParam
 from urllib.parse import urlparse
 
 from app.api.schemas import QueryRequest, QueryResult, QueryResponse
@@ -20,7 +20,10 @@ def _get_weaviate() -> WeaviateRepository:
 
 
 @router.post("/query", response_model=QueryResponse, summary="Semantic search over ingested documents")
-def query_documents(body: QueryRequest) -> QueryResponse:
+def query_documents(
+    body: QueryRequest,
+    weaviate_repo: WeaviateRepository = Depends(_get_weaviate),
+) -> QueryResponse:
     """
     Run a semantic (vector) search against all ingested document chunks.
 
@@ -31,8 +34,11 @@ def query_documents(body: QueryRequest) -> QueryResponse:
     vector-distance score (lower = more similar).
     """
     try:
-        repo = _get_weaviate()
-        raw_results = repo.query(text=body.query, limit=body.limit)
+        raw_results = weaviate_repo.query(
+            text=body.query,
+            limit=body.limit,
+            alpha=settings.weaviate_hybrid_alpha,
+        )
     except Exception as exc:
         raise HTTPException(
             status_code=503,
@@ -46,6 +52,7 @@ def query_documents(body: QueryRequest) -> QueryResponse:
             page_numbers=r.get("page_numbers") or [],
             section_path=r.get("section_path", ""),
             distance=r.get("distance"),
+            score=r.get("score"),
             file_hash=r.get("file_hash"),
             file_size=r.get("file_size"),
             mime_type=r.get("mime_type"),

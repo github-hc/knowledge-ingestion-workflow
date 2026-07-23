@@ -138,3 +138,38 @@ def test_list_documents_route():
     assert data[0]["file_hash"] == "hash123"
     assert data[0]["file_size"] == 5000
     assert data[0]["original_file_name"] == "original_test.pdf"
+
+
+def test_query_route_hybrid_mapping():
+    from app.api.routes.query import _get_weaviate
+    mock_weaviate = MagicMock()
+    mock_weaviate.query.return_value = [
+        {
+            "text": "test chunk content",
+            "filename": "tmp_test.pdf",
+            "page_numbers": [1],
+            "section_path": "Root",
+            "distance": None,
+            "score": 0.875,
+            "file_hash": "hash123",
+            "file_size": 1000,
+            "mime_type": "application/pdf",
+            "total_pages": 5,
+            "original_file_name": "original.pdf",
+        }
+    ]
+    app.dependency_overrides[_get_weaviate] = lambda: mock_weaviate
+
+    response = client.post("/api/v1/query", json={"query": "test query", "limit": 2})
+    # Clean up override
+    del app.dependency_overrides[_get_weaviate]
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["query"] == "test query"
+    assert len(data["results"]) == 1
+    assert data["results"][0]["text"] == "test chunk content"
+    assert data["results"][0]["score"] == 0.875
+    assert data["results"][0]["distance"] is None
+    assert data["results"][0]["original_file_name"] == "original.pdf"
+

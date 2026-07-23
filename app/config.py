@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     chunk_max_tokens: int = 750
     chunk_overlap_tokens: int = 100
     pii_policy: str = "mask"
+    weaviate_hybrid_alpha: float = 0.5
 
 
 settings = Settings()

@@ -165,6 +165,8 @@ cp .env.example .env
 | `DEFAULT_WEBHOOK_URL` | `""` | Global fallback webhook URL to send process notifications. |
 | `CHUNK_MAX_TOKENS` | `750` | Maximum token limit per text chunk. |
 | `CHUNK_OVERLAP_TOKENS` | `100` | Token overlap size between successive chunks. |
+| `PII_POLICY` | `mask` | PII sanitization policy (`mask`, `remove`, `tokenize`). |
+| `WEAVIATE_HYBRID_ALPHA` | `0.5` | Weight for hybrid search blending (`1.0` = semantic vector search, `0.0` = keyword BM25 search). |
 
 ---
 
@@ -305,9 +307,9 @@ curl -X GET "http://localhost:8000/api/v1/jobs/7ac15339-4d2d-45db-91b3-6c7b0bc88
 
 ---
 
-### 3. Semantic Search Query
+### 3. Hybrid Search Query
 
-Queries Weaviate for similarity match across all ingested text chunks. Returns source file metadata for each chunk.
+Queries Weaviate using a hybrid search (blending semantic vector retrieval and BM25 keyword matching). Returns source file metadata along with search score metrics.
 
 - **URL**: `/api/v1/query`
 - **Method**: `POST`
@@ -336,7 +338,8 @@ curl -X POST "http://localhost:8000/api/v1/query" \
       "filename": "tmp_ykw72ma.pdf",
       "page_numbers": [3],
       "section_path": "",
-      "distance": 0.18732,
+      "distance": null,
+      "score": 0.87532,
       "file_hash": "e8c1f14b404960f52ec5ea27630650d522639026fb0d223e9a092188d6b815ad",
       "file_size": 17555,
       "mime_type": "application/pdf",
@@ -348,7 +351,8 @@ curl -X POST "http://localhost:8000/api/v1/query" \
       "filename": "tmp_ykw72ma.pdf",
       "page_numbers": [4],
       "section_path": "",
-      "distance": 0.22451,
+      "distance": null,
+      "score": 0.76541,
       "file_hash": "e8c1f14b404960f52ec5ea27630650d522639026fb0d223e9a092188d6b815ad",
       "file_size": 17555,
       "mime_type": "application/pdf",
