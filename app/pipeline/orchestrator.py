@@ -36,6 +36,14 @@ class PipelineOrchestrator:
 
             extracted: ExtractedContent = self.extract_stage.execute(file_path)
             chunks: List[Chunk] = self.chunk_stage.execute(extracted)
+
+            total_pages = extracted.metadata.get("total_pages", 0)
+            for chunk in chunks:
+                chunk.metadata["file_hash"] = job.file_hash
+                chunk.metadata["file_size"] = job.file_size
+                chunk.metadata["mime_type"] = job.mime_type
+                chunk.metadata["total_pages"] = total_pages
+
             documents: List[VectorDocument] = self.embed_stage.execute(chunks)
             chunk_count = self.store_stage.execute(documents)
 

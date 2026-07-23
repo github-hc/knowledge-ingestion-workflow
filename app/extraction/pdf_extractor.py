@@ -22,6 +22,18 @@ class PDFExtractor(DocumentExtractor):
         log.info("=" * 60)
         log.info(f"EXTRACT START: {file_path}")
 
+        total_pages = 0
+        try:
+            with pdfplumber.open(file_path) as pdf:
+                total_pages = len(pdf.pages)
+        except Exception:
+            try:
+                from pypdf import PdfReader
+                reader = PdfReader(file_path)
+                total_pages = len(reader.pages)
+            except Exception:
+                total_pages = 0
+
         elements: List[PageElement] = []
 
         # Try pdfplumber first
@@ -47,7 +59,7 @@ class PDFExtractor(DocumentExtractor):
         return ExtractedContent(
             text="\n".join(el.text for el in elements),
             elements=elements,
-            metadata={"source": file_path, "format": "pdf"},
+            metadata={"source": file_path, "format": "pdf", "total_pages": total_pages},
         )
 
     def _extract_with_pdfplumber(self, file_path: str) -> List[PageElement]:

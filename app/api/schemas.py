@@ -16,6 +16,9 @@ class JobDetailResponse(BaseModel):
     updated_at: str
     chunk_count: Optional[int] = None
     error: Optional[str] = None
+    file_hash: Optional[str] = None
+    file_size: Optional[int] = None
+    mime_type: Optional[str] = None
 
 
 class WebhookPayload(BaseModel):
@@ -37,6 +40,10 @@ class QueryResult(BaseModel):
     page_numbers: List[int]
     section_path: str
     distance: Optional[float] = None
+    file_hash: Optional[str] = None
+    file_size: Optional[int] = None
+    mime_type: Optional[str] = None
+    total_pages: Optional[int] = None
 
 
 class QueryResponse(BaseModel):

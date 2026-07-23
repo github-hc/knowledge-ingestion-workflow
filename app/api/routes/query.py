@@ -46,6 +46,10 @@ def query_documents(body: QueryRequest) -> QueryResponse:
             page_numbers=r.get("page_numbers") or [],
             section_path=r.get("section_path", ""),
             distance=r.get("distance"),
+            file_hash=r.get("file_hash"),
+            file_size=r.get("file_size"),
+            mime_type=r.get("mime_type"),
+            total_pages=r.get("total_pages"),
         )
         for r in raw_results
     ]

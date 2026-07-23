@@ -25,6 +25,9 @@ class JobStore:
             "updated_at": job.updated_at.isoformat(),
             "chunk_count": job.chunk_count,
             "error": job.error,
+            "file_hash": job.file_hash,
+            "file_size": job.file_size,
+            "mime_type": job.mime_type,
         })
 
     def _deserialize(self, data: str) -> Job:
@@ -33,6 +36,9 @@ class JobStore:
             job_id=payload["job_id"],
             filename=payload["filename"],
             webhook_url=payload.get("webhook_url"),
+            file_hash=payload.get("file_hash"),
+            file_size=payload.get("file_size"),
+            mime_type=payload.get("mime_type"),
         )
         job.status = JobStatus(payload["status"])
         job.created_at = datetime.fromisoformat(payload["created_at"].replace("Z", "+00:00"))
@@ -43,7 +49,15 @@ class JobStore:
 
     def create(self, job: Job) -> Job:
         self._client.set(self._key(job.job_id), self._serialize(job))
+        if job.file_hash:
+            self._client.set(f"hash:{job.file_hash}", job.job_id)
         return job
+
+    def get_job_by_hash(self, file_hash: str) -> Optional[Job]:
+        job_id = self._client.get(f"hash:{file_hash}")
+        if not job_id:
+            return None
+        return self.get(job_id)
 
     def get(self, job_id: str) -> Optional[Job]:
         data = self._client.get(self._key(job_id))
